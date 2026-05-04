@@ -6,6 +6,9 @@ on:
     - cron: "5 10 * * *"
   workflow_dispatch:   # Επιτρέπει χειροκίνητη εκτέλεση
 
+    push:
+    branches: [master]   # ← πρόσθεσε αυτό
+
 permissions:
   contents: write      # Απαραίτητο για git push
 
