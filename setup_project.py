@@ -1,5 +1,20 @@
 #!/usr/bin/env python3
 """
+Εκτέλεσε αυτό το script ΜΕΣΑ στον φάκελο struma-monitor.
+Δημιουργεί όλα τα απαραίτητα αρχεία αυτόματα.
+
+Χρήση:
+    cd struma-monitor
+    python setup_project.py
+"""
+
+import os
+
+# ── Περιεχόμενα αρχείων ────────────────────────────────────────────────────────
+
+SCRAPER = '''\
+#!/usr/bin/env python3
+"""
 Struma River Flow Scraper
 Σταθμός: 51880 - Струма / с. Марино поле (είσοδος στην Ελλάδα)
 Πηγή: https://hydro.bg/bg/t1.php?ime=&gr=data/&gn=tablRekiB2017
@@ -87,7 +102,7 @@ def save_to_csv(record):
         if not file_exists:
             writer.writeheader()
         writer.writerow(record)
-    print(f"[OK] {record['date']} {record['time_utc']} UTC — Q = {record['Q_m3s']} m3/s")
+    print(f"[OK] {record[\'date\']} {record[\'time_utc\']} UTC — Q = {record[\'Q_m3s\']} m3/s")
 
 
 def generate_dashboard():
@@ -182,3 +197,86 @@ if __name__ == "__main__":
         generate_dashboard()
     else:
         sys.exit(1)
+'''
+
+WORKFLOW = '''\
+name: Struma Flow Daily Scraper
+
+on:
+  schedule:
+    - cron: "5 10 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: Run scraper
+        run: python scrape_struma.py
+
+      - name: Commit and push data
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/struma_flow.csv index.html
+          git diff --cached --quiet || git commit -m "data: $(date -u +\'%Y-%m-%d\') Q update"
+          git push
+'''
+
+README = '''\
+# Struma Flow Monitor
+
+Αυτόματη ημερήσια καταγραφή παροχής Q (m3/s) του ποταμού Στρυμόνα.
+Σταθμός 51880 — с. Марино поле (σημείο εισόδου στην Ελλάδα).
+Πηγή: https://hydro.bg
+
+## Αρχεία
+- scrape_struma.py — scraper + dashboard generator
+- data/struma_flow.csv — ιστορικά δεδομένα
+- index.html — dashboard (GitHub Pages)
+- .github/workflows/scrape.yml — cron 12:05 EET καθημερινά
+
+## Τοπική εκτέλεση
+    pip install requests beautifulsoup4
+    python scrape_struma.py
+
+## CSV δομή
+    date, time_utc, Q_m3s, station, river, location
+'''
+
+# ── Δημιουργία αρχείων ─────────────────────────────────────────────────────────
+
+files = {
+    "scrape_struma.py":              SCRAPER,
+    ".github/workflows/scrape.yml":  WORKFLOW,
+    "README.md":                     README,
+    "data/.gitkeep":                 "",
+}
+
+for path, content in files.items():
+    os.makedirs(os.path.dirname(path), exist_ok=True) if os.path.dirname(path) else None
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(content)
+    print(f"[OK] {path}")
+
+print("\nΈτοιμο! Τώρα τρέξε:")
+print("  git add .")
+print('  git commit -m "init: full project setup"')
+print("  git push")
