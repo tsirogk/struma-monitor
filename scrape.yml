@@ -1,0 +1,40 @@
+name: Struma Flow Daily Scraper
+
+on:
+  schedule:
+    # Τρέχει κάθε μέρα στις 10:05 UTC = 12:05 EET (UTC+2) / 13:05 EEST (UTC+3)
+    - cron: "5 10 * * *"
+  workflow_dispatch:   # Επιτρέπει χειροκίνητη εκτέλεση
+
+permissions:
+  contents: write      # Απαραίτητο για git push
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # Πλήρες ιστορικό για σωστά commits
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: Run scraper
+        run: python scrape_struma.py
+
+      - name: Commit & push data
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/struma_flow.csv index.html
+          # Commit μόνο αν υπάρχουν αλλαγές
+          git diff --cached --quiet || git commit -m "data: $(date -u +'%Y-%m-%d') Q update"
+          git push
