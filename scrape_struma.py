@@ -57,12 +57,10 @@ def scrape_flow():
     location   = texts[2] if len(texts) > 2 else "с. Марино поле"
 
     q_value = None
-    for cell_text in texts[3:]:
-        try:
-            q_value = float(cell_text.replace(",", ".").replace(" ", ""))
-            break
-        except ValueError:
-            continue
+    try:
+        q_value = float(texts[7].replace(",", ".").replace(" ", ""))
+    except (IndexError, ValueError):
+        pass
 
     if q_value is None:
         print("[ERROR] Could not parse Q value.", file=sys.stderr)
