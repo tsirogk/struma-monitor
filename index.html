@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Στρυμόνας — Παροχή</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body  { font-family:Arial,sans-serif; background:#f5f7fa; margin:0; padding:20px; color:#333; }
+  h1    { color:#1a6496; }
+  .stats{ display:flex; gap:16px; flex-wrap:wrap; margin-bottom:24px; }
+  .card { background:#fff; border-radius:8px; padding:16px 24px; box-shadow:0 2px 6px rgba(0,0,0,.1); }
+  .val  { font-size:1.8em; font-weight:bold; color:#1a6496; }
+  .lbl  { font-size:.8em; color:#888; margin-top:4px; }
+  .box  { background:#fff; border-radius:8px; padding:20px; box-shadow:0 2px 6px rgba(0,0,0,.1); }
+  footer{ margin-top:16px; font-size:.75em; color:#aaa; text-align:center; }
+</style>
+</head>
+<body>
+<h1>Ποταμός Στρυμόνας — Παροχή Q</h1>
+<p>Σταθμός 51880 · с. Марино поле · Πηγή: hydro.bg</p>
+<div class="stats">
+  <div class="card"><div class="val">5.000</div><div class="lbl">Τελευταία (m³/s)<br>2026-05-05</div></div>
+  <div class="card"><div class="val">5.000</div><div class="lbl">Μέγιστη (m³/s)</div></div>
+  <div class="card"><div class="val">5.000</div><div class="lbl">Ελάχιστη (m³/s)</div></div>
+  <div class="card"><div class="val">5.000</div><div class="lbl">Μέση (m³/s)</div></div>
+  <div class="card"><div class="val">1</div><div class="lbl">Ημέρες</div></div>
+</div>
+<div class="box">
+  <canvas id="chart" height="90"></canvas>
+</div>
+<footer>Αυτόματη ενημέρωση κάθε ημέρα μέσω GitHub Actions</footer>
+<script>
+new Chart(document.getElementById("chart"), {
+  type: "line",
+  data: {
+    labels: ['2026-05-05'],
+    datasets: [{
+      label: "Q (m³/s)",
+      data: [5.0],
+      borderColor: "#1a6496",
+      backgroundColor: "rgba(26,100,150,0.1)",
+      borderWidth: 2,
+      tension: 0.3,
+      fill: true,
+      pointRadius: 1 > 60 ? 0 : 3
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      title: { display: true, text: "Ημερήσια παροχή Στρυμόνα — Marino Pole (m³/s)" }
+    },
+    scales: {
+      x: { ticks: { maxTicksLimit: 12 } },
+      y: { title: { display: true, text: "Q (m³/s)" } }
+    }
+  }
+});
+</script>
+</body>
+</html>
