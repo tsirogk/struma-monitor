@@ -19,20 +19,30 @@ HEADERS_CSV = ["date", "time_utc", "Q_m3s", "station", "river", "location"]
 
 HEADERS_HTTP = {
     "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/124.0.0.0 Safari/537.36"
+        "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:125.0) "
+        "Gecko/20100101 Firefox/125.0"
     ),
-    "Accept-Language": "bg,en;q=0.9",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "bg-BG,bg;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
+    "DNT": "1",
 }
 
 
 def scrape_flow():
     try:
         session = requests.Session()
+        # Πρώτη επίσκεψη στην αρχική σελίδα για cookies
         session.get("https://hydro.bg/", headers=HEADERS_HTTP, timeout=15)
-        resp = session.get(URL, headers=HEADERS_HTTP, timeout=30)
+        # Προσθήκη referer για να μοιάζει με πλοήγηση από Firefox
+        headers_with_referer = {**HEADERS_HTTP, "Referer": "https://hydro.bg/"}
+        resp = session.get(URL, headers=headers_with_referer, timeout=30)
         resp.raise_for_status()
         resp.encoding = "utf-8"
     except requests.RequestException as e:
@@ -53,14 +63,24 @@ def scrape_flow():
         return None
 
     texts      = [c.get_text(strip=True) for c in target_row]
+    print(f"[DEBUG] Row cells: {texts}")
+
     river_name = texts[1] if len(texts) > 1 else "Струма"
     location   = texts[2] if len(texts) > 2 else "с. Марино поле"
 
+    # 8η στήλη (index 7) = Q [m3/s]
     q_value = None
     try:
-        q_value = float(texts[7].replace(",", ".").replace(" ", ""))
+        cell_text = texts[7]
+        q_value = float(cell_text.replace(",", ".").replace(" ", ""))
     except (IndexError, ValueError):
-        pass
+        # Fallback: πρώτη αριθμητική τιμή μετά τη στήλη 3
+        for cell_text in texts[3:]:
+            try:
+                q_value = float(cell_text.replace(",", ".").replace(" ", ""))
+                break
+            except ValueError:
+                continue
 
     if q_value is None:
         print("[ERROR] Could not parse Q value.", file=sys.stderr)
@@ -136,7 +156,7 @@ def generate_dashboard():
 <div class="box">
   <canvas id="chart" height="90"></canvas>
 </div>
-<footer>Αυτόματη ενημέρωση κάθε ημέρα μέσω GitHub Actions</footer>
+<footer>Αυτόματη ενημέρωση κάθε ημέρα μέσω Windows Task Scheduler + GitHub</footer>
 <script>
 new Chart(document.getElementById("chart"), {{
   type: "line",
